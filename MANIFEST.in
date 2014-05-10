@@ -1,0 +1,3 @@
+recursive-include pyramid_workflow *
+include *.py *.rst
+global-exclude *.pyc
