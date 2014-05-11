@@ -22,9 +22,9 @@ Example of use:
 
    from pyramid_workflow import Workflow
 
-   task_workflow = Workflow(state_attr='worker_state',
+   task_workflow = Workflow(state_attr='task_state',
                             initial_state='new',
-                            type='worker')
+                            type='task')
 
    task_workflow.add_state('new')
    task_workflow.add_state('working')
