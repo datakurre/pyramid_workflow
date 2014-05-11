@@ -18,7 +18,7 @@ Differences from ``substanced.workflow``:
 
 Example of use:
 
-.. code: python
+.. code:: python
 
    from pyramid_workflow import Workflow
 
