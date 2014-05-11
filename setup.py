@@ -34,7 +34,6 @@ setup(
     test_suite="pyramid_workflow",
     extras_require={'testing': [
         'nose',
-        'coverage',
         'mock',
     ]}
 )
