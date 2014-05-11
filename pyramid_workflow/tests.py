@@ -26,7 +26,7 @@ class WorkflowTests(unittest.TestCase):
 
     def _makeOne(self, initial_state='pending', type='basic'):
         klass = self._getTargetClass()
-        return klass(initial_state, type)
+        return klass('state_{0:s}'.format(type), initial_state, type)
 
     def _makePopulated(self, state_callback=None, transition_callback=None):
         sm = self._makeOne()
@@ -80,7 +80,7 @@ class WorkflowTests(unittest.TestCase):
 
         mock_has_permission.side_effect = lambda p, c, r: p != 'forbidden'
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'private'}
+        ob.state_basic = 'private'
         sm.transition_to_state(ob, object(), 'pending')
         self.assertEqual(len(args), 1)
         self.assertEqual(args[0][1]['transition']['name'], 'submit2')
@@ -100,7 +100,7 @@ class WorkflowTests(unittest.TestCase):
         sm._transitions['submit2']['permission'] = 'forbidden2'
 
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'private'}
+        ob.state_basic = 'private'
         request = object()
         from pyramid_workflow import WorkflowError
         mock_has_permission.return_value = False
@@ -128,7 +128,7 @@ class WorkflowTests(unittest.TestCase):
     def test_has_state_true(self):
         sm = self._makeOne()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'abc'}
+        ob.state_basic = 'abc'
         self.assertEqual(sm.has_state(ob), True)
 
     def test_state_of_uninitialized(self):
@@ -139,7 +139,7 @@ class WorkflowTests(unittest.TestCase):
     def test_state_of_initialized(self):
         sm = self._makeOne()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         self.assertEqual(sm.state_of(ob), 'pending')
 
     def test_state_of_no_workflow_is_None(self):
@@ -151,7 +151,7 @@ class WorkflowTests(unittest.TestCase):
     def test_state_of_nondefault(self):
         sm = self._makeOne()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         self.assertEqual(sm.state_of(ob), 'pending')
 
     def test_state_of_None_is_None(self):
@@ -266,7 +266,7 @@ class WorkflowTests(unittest.TestCase):
         import operator
         sm = self._makePopulated()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         result = sorted(sm._get_transitions(ob),
                         key=operator.itemgetter('name'))
         self.assertEqual(len(result), 2)
@@ -283,7 +283,7 @@ class WorkflowTests(unittest.TestCase):
     def test__get_transitions_content_has_state(self):
         sm = self._makePopulated()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'published'}
+        ob.state_basic = 'published'
         result = sm._get_transitions(ob)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]['name'], 'retract')
@@ -294,15 +294,15 @@ class WorkflowTests(unittest.TestCase):
             args.append((content, kw))
         sm = self._makePopulated(transition_callback=dummy)
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         sm._transition(ob, 'publish')
-        self.assertEqual(ob.__workflow_state__['basic'], 'published')
+        self.assertEqual(ob.state_basic, 'published')
         sm._transition(ob, 'retract')
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
         sm._transition(ob, 'reject')
-        self.assertEqual(ob.__workflow_state__['basic'], 'private')
+        self.assertEqual(ob.state_basic, 'private')
         sm._transition(ob, 'submit')
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
 
         self.assertEqual(len(args), 4)
         self.assertEqual(args[0][0], ob)
@@ -339,7 +339,7 @@ class WorkflowTests(unittest.TestCase):
             content.info = kw
         sm = self._makePopulated(state_callback=dummy)
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         sm._transition(ob, 'publish')
         self.assertEqual(ob.info['transition'],
                          {'from_state': 'pending',
@@ -360,7 +360,7 @@ class WorkflowTests(unittest.TestCase):
         sm.add_state('published')
         sm.add_transition('publish', 'pending', 'published')
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         sm._transition(ob, 'publish')
         called = sm._states['published']._called
         self.assertEqual(called[0], ob)
@@ -384,9 +384,9 @@ class WorkflowTests(unittest.TestCase):
     def test__transition_to_state_same(self):
         sm = self._makePopulated()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         sm._transition_to_state(ob, 'pending')
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
 
     def test__transition_to_state(self):
         args = []
@@ -394,13 +394,13 @@ class WorkflowTests(unittest.TestCase):
             args.append((content, info))
         sm = self._makePopulated(transition_callback=dummy)
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         sm._transition_to_state(ob, 'published')
-        self.assertEqual(ob.__workflow_state__['basic'], 'published')
+        self.assertEqual(ob.state_basic, 'published')
         sm._transition_to_state(ob, 'pending')
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
         sm._transition_to_state(ob, 'private')
-        self.assertEqual(ob.__workflow_state__['basic'], 'private')
+        self.assertEqual(ob.state_basic, 'private')
         sm._transition_to_state(ob, 'pending')
 
         self.assertEqual(len(args), 4)
@@ -452,8 +452,7 @@ class WorkflowTests(unittest.TestCase):
     def test__transition_to_state_skip_same_true(self):
         sm = self._makeOne(initial_state='pending')
         ob = DummyContent()
-        ob.__workflow_state__ = {}
-        ob.__workflow_state__['basic'] = 'pending'
+        ob.state_basic = 'pending'
         self.assertEqual(sm._transition_to_state(ob, 'pending', (), True),
                          None)
 
@@ -461,7 +460,7 @@ class WorkflowTests(unittest.TestCase):
         sm = self._makeOne()
         sm.add_state('pending', title='Pending')
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         result = sm._get_states(ob)
 
         state = result[0]
@@ -476,7 +475,7 @@ class WorkflowTests(unittest.TestCase):
         from operator import itemgetter
         sm = self._makePopulated()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'pending'}
+        ob.state_basic = 'pending'
         result = sorted(sm._get_states(ob), key=itemgetter('name'))
         self.assertEqual(len(result), 3)
 
@@ -510,7 +509,7 @@ class WorkflowTests(unittest.TestCase):
         from operator import itemgetter
         sm = self._makePopulated()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'published'}
+        ob.state_basic = 'published'
         result = sorted(sm._get_states(ob), key=itemgetter('name'))
         self.assertEqual(len(result), 3)
 
@@ -543,7 +542,7 @@ class WorkflowTests(unittest.TestCase):
         from operator import itemgetter
         sm = self._makePopulated()
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'private'}
+        ob.state_basic = 'private'
         result = sorted(sm._get_states(ob), key=itemgetter('name'))
         self.assertEqual(len(result), 3)
 
@@ -577,7 +576,7 @@ class WorkflowTests(unittest.TestCase):
         sm.add_state('pending')
         ob = DummyContent()
         state, msg = sm.initialize(ob)
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
         self.assertEqual(msg, None)
         self.assertEqual(state, 'pending')
 
@@ -589,13 +588,12 @@ class WorkflowTests(unittest.TestCase):
         sm.add_state('pending', initializer)
         ob = DummyContent()
         state, msg = sm.initialize(ob)
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
         self.assertEqual(ob.initialized, True)
         self.assertEqual(msg, 'abc')
         self.assertEqual(state, 'pending')
 
     def test_reset_content_has_no_state(self):
-        from persistent.mapping import PersistentMapping
         def callback(content, **kw):
             content.called_back = True
             return '123'
@@ -603,8 +601,7 @@ class WorkflowTests(unittest.TestCase):
         sm.add_state('pending', callback=callback)
         ob = DummyContent()
         state, msg = sm.reset(ob)
-        self.assertEqual(ob.__workflow_state__.__class__, PersistentMapping)
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
         self.assertEqual(ob.called_back, True)
         self.assertEqual(state, 'pending')
         self.assertEqual(msg, '123')
@@ -614,7 +611,7 @@ class WorkflowTests(unittest.TestCase):
         sm.add_state('pending',)
         ob = DummyContent()
         state, msg = sm.reset(ob)
-        self.assertEqual(ob.__workflow_state__['basic'], 'pending')
+        self.assertEqual(ob.state_basic, 'pending')
         self.assertEqual(state, 'pending')
         self.assertEqual(msg, None)
 
@@ -626,9 +623,9 @@ class WorkflowTests(unittest.TestCase):
         sm.add_state('pending')
         sm.add_state('private', callback=callback)
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'private'}
+        ob.state_basic = 'private'
         state, msg = sm.reset(ob)
-        self.assertEqual(ob.__workflow_state__['basic'], 'private')
+        self.assertEqual(ob.state_basic, 'private')
         self.assertEqual(ob.called_back, True)
         self.assertEqual(state, 'private')
         self.assertEqual(msg, '123')
@@ -638,7 +635,7 @@ class WorkflowTests(unittest.TestCase):
         sm = self._makeOne(initial_state='pending')
         sm.add_state('pending')
         ob = DummyContent()
-        ob.__workflow_state__ = {'basic': 'supersecret'}
+        ob.state_basic = 'supersecret'
         self.assertRaises(WorkflowError, sm.reset, ob)
 
     def test_transition_permission_is_None(self):
@@ -650,7 +647,7 @@ class WorkflowTests(unittest.TestCase):
             transitioned.append(D)
         workflow._transition = lambda *arg, **kw: append(*arg, **kw)
         content = DummyContent()
-        content.__workflow_state__ = {'basic': 'pending'}
+        content.state_basic = 'pending'
         request = object()
         workflow.transition(content, request, 'publish')
         self.assertEqual(len(transitioned), 1)
@@ -673,7 +670,7 @@ class WorkflowTests(unittest.TestCase):
         workflow._transition_to_state = lambda *arg, **kw: append(*arg, **kw)
         request = object()
         content = DummyContent()
-        content.__workflow_state__ = {'basic': 'pending'}
+        content.state_basic = 'pending'
         workflow.transition_to_state(content, request, 'published')
         self.assertEqual(len(transitioned), 1)
         transitioned = transitioned[0]
@@ -693,7 +690,7 @@ class WorkflowTests(unittest.TestCase):
             transitioned.append(D)
         workflow._transition_to_state = lambda *arg, **kw: append(*arg, **kw)
         content = DummyContent()
-        content.__workflow_state__ = {'basic': 'pending'}
+        content.state_basic = 'pending'
         workflow.transition_to_state(content, None, 'published')
         self.assertEqual(len(transitioned), 1)
         transitioned = transitioned[0]
@@ -713,7 +710,7 @@ class WorkflowTests(unittest.TestCase):
             transitioned.append(D)
         workflow._transition_to_state = lambda *arg, **kw: append(*arg, **kw)
         content = DummyContent()
-        content.__workflow_state__ = {'basic': 'pending'}
+        content.state_basic = 'pending'
         request = object()
         workflow.transition_to_state(content, request, 'published')
         self.assertEqual(len(transitioned), 1)
@@ -992,20 +989,6 @@ class register_workflowTests(unittest.TestCase):
                          self.config.registry.workflow.types)
         self.assertEqual({'File': {u('basic'): wf}, 'Folder': {u('basic'): wf}},
                          self.config.registry.workflow.content_types)
-        self.config.registry.content.exists.assert_any_call('File')
-        self.config.registry.content.exists.assert_any_call('Folder')
-
-    def test_register_workflow_no_such_content_type(self):
-        from pyramid.config import ConfigurationError
-        self.config.registry.content.exists.return_value = False
-        wf = mock.Mock()
-        self.assertRaises(ConfigurationError,
-                          self._callFUT,
-                          self.config,
-                          wf,
-                          'basic',
-                          'Foobar')
-        self.config.registry.content.exists.assert_call('Foobar')
 
 class DummyContent:
     pass
