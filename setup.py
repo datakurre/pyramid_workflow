@@ -30,10 +30,7 @@ setup(
     tests_require=[
         'setuptools',
         'pyramid',
+        'mock',
     ],
     test_suite="pyramid_workflow",
-    extras_require={'testing': [
-        'nose',
-        'mock',
-    ]}
 )
