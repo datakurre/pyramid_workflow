@@ -11,10 +11,10 @@ Differences from ``substanced.workflow``:
 
 - workflow requires ``state_attr`` as its first positional argument
   similarly to the original ``repoze.workflow`` (and because of that
-  parallel workflows should use different ``state_attr``
+  parallel workflows should use different ``state_attr``)
 
 - content-type related checks are removed, because there's no more
-  content registry
+  global content registry (``substanced.content``).
 
 Example of use:
 
@@ -42,3 +42,5 @@ Example of use:
 
    def includeme(config):
        config.add_workflow(task_workflow, content_types=('my_type',))
+
+See also: http://substanced.readthedocs.org/en/latest/workflows.html
